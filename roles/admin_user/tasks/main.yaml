@@ -10,19 +10,6 @@
 - name: Create user
   when: (admin_user.resources | length | int == 0) or (force is defined)
   block:
-    - name: Create temporary htpasswd file
-      ansible.builtin.tempfile:
-        state: file
-      register: tempfile_1
-
-    - name: Populate htpasswd
-      community.general.htpasswd:
-        path: "{{ tempfile_1.path }}"
-        mode: 0644
-        name: admin
-        password: "{{ admin_password | default('admin') }}"
-        crypt_scheme: bcrypt
-
     - name: Create secret
       kubernetes.core.k8s:
         definition:
@@ -33,18 +20,12 @@
             namespace: openshift-config
           type: Opaque
           data:
-            htpasswd: "{{ lookup('ansible.builtin.file', tempfile_1.path) | b64encode }}"
+            htpasswd: "{{ ('admin:' + (admin_password | default('admin')) | password_hash(hashtype='blowfish', ident='2y')) | b64encode }}"
         apply: true
         force: true
         state: present
       register: k8s_result
       until: k8s_result is not failed
-
-    - name: Remove temporary htpasswd file
-      when: tempfile_1.path is defined
-      ansible.builtin.file:
-        path: "{{ tempfile_1.path }}"
-        state: absent
 
     - name: Update OAuth
       kubernetes.core.k8s:
