@@ -8,7 +8,7 @@
   until: admin_user is not failed
 
 - name: Create user
-  when: admin_user.resources | length | int == 0
+  when: (admin_user.resources | length | int == 0) or (force is defined)
   block:
     - name: Create temporary htpasswd file
       ansible.builtin.tempfile:
@@ -34,6 +34,7 @@
           data:
             htpasswd: "{{ lookup('ansible.builtin.file', tempfile_1.path) | b64encode }}"
         apply: true
+        force: true
         state: present
       register: k8s_result
       until: k8s_result is not failed
