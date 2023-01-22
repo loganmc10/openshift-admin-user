@@ -1,0 +1,82 @@
+- name: Check for existing user
+  kubernetes.core.k8s_info:
+    api_version: user.openshift.io/v1
+    kind: User
+    name: admin
+  register: admin_user
+  until: admin_user is not failed
+
+- name: Create user
+  when: admin_user.resources | length | int == 0
+  block:
+    - name: Create temporary htpasswd file
+      ansible.builtin.tempfile:
+        state: file
+      register: tempfile_1
+
+    - name: Populate htpasswd
+      community.general.htpasswd:
+        path: "{{ tempfile_1.path }}"
+        name: admin
+        password: "{{ admin_password | default('admin') }}"
+
+    - name: Create secret
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: htpass-secret
+            namespace: openshift-config
+          type: Opaque
+          data:
+            htpasswd: "{{lookup('ansible.builtin.file', tempfile_1.path) | b64encode }}"
+        apply: true
+        state: present
+      register: k8s_result
+      until: k8s_result is not failed
+
+    - name: Remove temporary htpasswd file
+      when: tempfile_1.path is defined
+      ansible.builtin.file:
+        path: "{{ tempfile_1.path }}"
+        state: absent
+
+    - name: Update OAuth
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: config.openshift.io/v1
+          kind: OAuth
+          metadata:
+            name: cluster
+          spec:
+            identityProviders:
+              - name: my_htpasswd_provider
+                mappingMethod: claim
+                type: HTPasswd
+                htpasswd:
+                  fileData:
+                    name: htpass-secret
+        state: present
+      register: k8s_result
+      until: k8s_result is not failed
+
+    - name: Grant cluster-admin
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: admin-cluster-admin
+          subjects:
+            - kind: User
+              name: admin
+              apiGroup: rbac.authorization.k8s.io
+          roleRef:
+            kind: ClusterRole
+            name: cluster-admin
+            apiGroup: rbac.authorization.k8s.io
+        apply: true
+        state: present
+      register: k8s_result
+      until: k8s_result is not failed

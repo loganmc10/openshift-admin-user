@@ -1,0 +1,5 @@
+- name: Create admin user
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - {role: 'admin_user', tags: 'admin_user'}
