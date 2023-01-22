@@ -18,6 +18,7 @@
     - name: Populate htpasswd
       community.general.htpasswd:
         path: "{{ tempfile_1.path }}"
+        mode: 0644
         name: admin
         password: "{{ admin_password | default('admin') }}"
 
@@ -31,7 +32,7 @@
             namespace: openshift-config
           type: Opaque
           data:
-            htpasswd: "{{lookup('ansible.builtin.file', tempfile_1.path) | b64encode }}"
+            htpasswd: "{{ lookup('ansible.builtin.file', tempfile_1.path) | b64encode }}"
         apply: true
         state: present
       register: k8s_result
