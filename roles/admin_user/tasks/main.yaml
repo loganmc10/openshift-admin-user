@@ -21,6 +21,7 @@
         mode: 0644
         name: admin
         password: "{{ admin_password | default('admin') }}"
+        crypt_scheme: bcrypt
 
     - name: Create secret
       kubernetes.core.k8s:
