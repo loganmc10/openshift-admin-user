@@ -46,6 +46,20 @@
       register: k8s_result
       until: k8s_result is not failed
 
+    - name: Create cluster-admins group
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: user.openshift.io/v1
+          kind: Group
+          metadata:
+            name: cluster-admins
+          users:
+            - admin
+        apply: true
+        state: present
+      register: k8s_result
+      until: k8s_result is not failed
+
     - name: Grant cluster-admin
       kubernetes.core.k8s:
         definition:
@@ -54,8 +68,8 @@
           metadata:
             name: admin-cluster-admin
           subjects:
-            - kind: User
-              name: admin
+            - kind: Group
+              name: cluster-admins
               apiGroup: rbac.authorization.k8s.io
           roleRef:
             kind: ClusterRole
