@@ -15,7 +15,7 @@ jobs:
           dnf -q -y update
           dnf -q -y install python3-pip git
           pip3 install --upgrade pip
-          pip3 install --upgrade ansible-core kubernetes ansible-lint
+          pip3 install --upgrade ansible-core kubernetes ansible-lint passlib
           ansible-galaxy collection install -U kubernetes.core community.general ansible.utils
           git config --global --add safe.directory /__w/openshift-admin-user/openshift-admin-user
       - uses: actions/checkout@v3
