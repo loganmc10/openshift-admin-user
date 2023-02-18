@@ -79,3 +79,15 @@
         state: present
       register: k8s_result
       until: k8s_result is not failed
+
+- name: Remove kubeadmin user
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: kubeadmin
+        namespace: kube-system
+    state: absent
+  register: k8s_result
+  until: k8s_result is not failed
