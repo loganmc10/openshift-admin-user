@@ -87,6 +87,7 @@
       until: k8s_result is not failed
 
 - name: Remove kubeadmin user
+  when: remove_kubeadmin | bool
   kubernetes.core.k8s:
     definition:
       apiVersion: v1
