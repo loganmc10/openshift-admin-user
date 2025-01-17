@@ -3,6 +3,7 @@
     name:
       - kubernetes
       - passlib
+      - bcrypt
 
 - name: Check for existing user
   kubernetes.core.k8s_info:
