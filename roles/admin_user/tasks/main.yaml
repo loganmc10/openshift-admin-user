@@ -11,11 +11,11 @@
     kind: Secret
     name: htpass-secret
     namespace: openshift-config
-  register: admin_user
-  until: admin_user is not failed
+  register: admin_user_user
+  until: admin_user_user is not failed
 
 - name: Create user
-  when: (admin_user.resources | length | int == 0) or (force is defined)
+  when: (admin_user_user.resources | length | int == 0) or (force is defined)
   block:
     - name: Create secret
       kubernetes.core.k8s:
@@ -31,8 +31,8 @@
         apply: true
         force: true
         state: present
-      register: k8s_result
-      until: k8s_result is not failed
+      register: admin_user_k8s_result
+      until: admin_user_k8s_result is not failed
 
     - name: Update OAuth
       kubernetes.core.k8s:
@@ -50,8 +50,8 @@
                   fileData:
                     name: htpass-secret
         state: present
-      register: k8s_result
-      until: k8s_result is not failed
+      register: admin_user_k8s_result
+      until: admin_user_k8s_result is not failed
 
     - name: Create cluster-admins group
       kubernetes.core.k8s:
@@ -64,8 +64,8 @@
             - admin
         apply: true
         state: present
-      register: k8s_result
-      until: k8s_result is not failed
+      register: admin_user_k8s_result
+      until: admin_user_k8s_result is not failed
 
     - name: Grant cluster-admin
       kubernetes.core.k8s:
@@ -84,8 +84,8 @@
             apiGroup: rbac.authorization.k8s.io
         apply: true
         state: present
-      register: k8s_result
-      until: k8s_result is not failed
+      register: admin_user_k8s_result
+      until: admin_user_k8s_result is not failed
 
 - name: Remove kubeadmin user
   when: remove_kubeadmin | bool
@@ -97,5 +97,5 @@
         name: kubeadmin
         namespace: kube-system
     state: absent
-  register: k8s_result
-  until: k8s_result is not failed
+  register: admin_user_k8s_result
+  until: admin_user_k8s_result is not failed
